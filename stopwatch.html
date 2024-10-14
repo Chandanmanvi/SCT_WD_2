@@ -1,3 +1,197 @@
-<html>
-    
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title >Stopwatch</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-image: url('https://www.pixelstalk.net/wp-content/uploads/images6/Galaxy-Wallpaper-4k-Wallpaper-High-Quality.jpg'); /* light blue background */
+            background-size: 100%; /* adjust the zoom level */
+background-position: center; /* keep the image centered */
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            margin: 10px 0; /* Reduced margin to decrease space above stopwatch */
+        }
+
+        .outer-circle {
+            width: 300px;  /* Increased width */
+            height: 300px; /* Increased height */
+            border: 10px solid #b43434;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #430a0a;
+            margin-top: 20px; /* Adjust this value to move it upwards */
+        }
+
+        .inner-circle {
+            width: 250px;  /* Increased width */
+            height: 250px; /* Increased height */
+            border: 10px solid #9e5d13;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #745308;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .timer {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 20px; /* Space below timer */
+        }
+
+        .button-container {
+            margin-top: 10px; /* Space between timer and buttons */
+        }
+
+        .start-button, .stop-button, .reset-button, .lap-button {
+            width: 100px;
+            height: 30px;
+            border: none;
+            border-radius: 5px;
+            background-color: #4CAF50; /* Green background */
+            color: #f76a06; /* Orange text */
+            cursor: pointer;
+            margin: 5px; /* Space between buttons */
+        }
+
+        .start-button:hover, .stop-button:hover, .reset-button:hover, .lap-button:hover {
+            background-color: #e4a105; /* Hover effect */
+        }
+
+        #laps {
+            margin-bottom: 10px; /* Reduced space from bottom */
+            height: 400px; /* Fixed height for laps section */
+            overflow-y: auto; /* Enable vertical scrolling */
+            width: calc(100% - 40px); /* Full width minus padding */
+        }
+
+        #lap-list {
+          color: #ffffff;
+            list-style-type: none; /* Remove default list styling */
+            padding: 0; /* Remove default padding */
+            margin: 0; /* Remove default margin */
+        }
+    </style>
+</head>
+<body>
+
+    <h1 style="color: white;">Stopwatch</h1>
+    <div class="outer-circle">
+        <div class="inner-circle">
+            <div id="stopwatch" class="timer">00:00:00.000</div>
+            
+            <div class="button-container">
+                <button id="start-button">Start</button>
+                <button id="pause-button" disabled>Pause</button>
+                <button id="reset-button" disabled>Reset</button>
+                <button id="lap-button" disabled>Lap</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="laps">
+        <h2 style="color: white;">Laps</h2>
+        <ul id="lap-list"></ul>
+    </div>
+
+    <script>
+      let startTime = 0;
+      let currentTime = 0;
+      let intervalId = 0;
+      let isRunning = false;
+      let lapTimes = [];
+      const startSound = new Audio('start.mp3');
+      const pauseSound = new Audio('pause.mp3');
+      const resetSound = new Audio('reset.mp3');
+      
+      document.getElementById('start-button').addEventListener('click', start);
+      document.getElementById('pause-button').addEventListener('click', pause);
+      document.getElementById('reset-button').addEventListener('click', reset);
+      document.getElementById('lap-button').addEventListener('click', lap);
+
+      function start() {
+          if (!isRunning) {
+              startSound.play();
+              startTime = new Date().getTime() - currentTime; // Adjust startTime to account for paused time
+              intervalId = setInterval(updateTime, 10);
+              isRunning = true;
+
+              document.getElementById('start-button').disabled = true;
+              document.getElementById('pause-button').disabled = false;
+              document.getElementById('reset-button').disabled = false;
+              document.getElementById('lap-button').disabled = false;
+          }
+      }
+
+      function pause() {
+          pauseSound.play();
+          clearInterval(intervalId);
+          isRunning = false;
+
+          document.getElementById('start-button').disabled = false;
+          document.getElementById('pause-button').disabled = true;
+          document.getElementById('reset-button').disabled = false;      
+      }
+
+      function reset() {
+          resetSound.play();
+          clearInterval(intervalId); // Stop the interval
+          startTime = 0;
+          currentTime = 0;
+          lapTimes = [];
+          document.getElementById('stopwatch').innerText = '00:00:00.000';
+          document.getElementById('lap-list').innerHTML = '';
+          
+          document.getElementById('start-button').disabled = false;
+          document.getElementById('pause-button').disabled = true;
+          document.getElementById('reset-button').disabled = true;
+          document.getElementById('lap-button').disabled = true;
+
+          isRunning = false; // Reset the running state
+      }
+      
+      function lap() {
+          const lapTime = formatTime(currentTime);
+          lapTimes.push(lapTime);
+          
+          const lapList = document.getElementById('lap-list');
+          const lapItem = document.createElement('li');
+          lapItem.innerText = `Lap ${lapTimes.length}: ${lapTime}`;
+          
+          lapList.appendChild(lapItem);
+      }
+
+      function updateTime() {
+          currentTime = new Date().getTime() - startTime;
+          document.getElementById('stopwatch').innerText = formatTime(currentTime);
+      }
+
+      function formatTime(time) {
+          const hours = Math.floor(time / 3600000);
+          const minutes = Math.floor((time % 3600000) / 60000);
+          const seconds = Math.floor((time % 60000) / 1000);
+          const milliseconds = time % 1000;
+
+          return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}.${pad(milliseconds, 3)}`;
+      }
+
+      function pad(number, length = 2) {
+          return String(number).padStart(length, '0');
+      }
+    </script>
+</body>
 </html>
